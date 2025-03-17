@@ -49,10 +49,13 @@ class SettingViewController: UIViewController {
         let window = UIApplication.shared.connectedScenes.flatMap { ($0 as? UIWindowScene)?.windows ?? [] }.first { $0.isKeyWindow }
         if sender.selectedSegmentIndex == 0 {
             window?.overrideUserInterfaceStyle = .light
+            UserDefaults.standard.setValue(0, forKey: "interfacePreference")
         } else if sender.selectedSegmentIndex == 1 {
             window?.overrideUserInterfaceStyle = .dark
+            UserDefaults.standard.setValue(1, forKey: "interfacePreference")
         } else {
             window?.overrideUserInterfaceStyle = .unspecified
+            UserDefaults.standard.setValue(2, forKey: "interfacePreference")
         }
     }
     
