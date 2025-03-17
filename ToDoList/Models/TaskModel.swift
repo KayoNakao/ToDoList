@@ -17,7 +17,7 @@ struct Task {
     var isComplete: Bool
 }
 
-class LocalTask {
+class LocalTask: Object {
     
     @Persisted(primaryKey: true) var _id: String
     @Persisted var category = Category.study

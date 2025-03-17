@@ -6,12 +6,16 @@
 //
 
 import UIKit
+import RealmSwift
+import os
 
 class HomeViewController: UIViewController {
 
     @IBOutlet weak var titleView: UIView!
     @IBOutlet weak var tableView: UITableView!
     var tasks: [Task] = []
+    let realm = try! Realm()
+    
     lazy var addButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = .link
@@ -24,19 +28,35 @@ class HomeViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupViews()
+        setupNotification()
+        let localTasks = realm.objects(LocalTask.self)
+        localTasks.forEach { localTask in
+            let task = Task(id: localTask._id, category: localTask.category, caption: localTask.capion, createDate: localTask.createDate, isComplete: localTask.isComplete)
+            tasks.append(task)
+        }
+        tableView.reloadData()
+    }
+
+    private func setupViews() {
         titleView.clipsToBounds = true
         titleView.layer.cornerRadius = 24
-        titleView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner] 
+        titleView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         tableView.tableFooterView = UIView()
         tableView.separatorStyle = .none
         tableView.dataSource = self
         tableView.estimatedRowHeight = 80
         tableView.rowHeight = UITableView.automaticDimension
         view.addSubview(addButton)
+
+    }
+    
+    private func setupNotification() {
         NotificationCenter.default.addObserver(self, selector: #selector(createTask(_:)), name: NSNotification.Name("com.kayo.createTask"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(editTask(_:)), name: NSNotification.Name("com.kayo.editTask"), object: nil)
-    }
 
+    }
+    
     @objc func editTask(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let task = userInfo["updateTask"] as? Task else {
@@ -47,6 +67,20 @@ class HomeViewController: UIViewController {
         }
         tasks[index] = task
         tableView.reloadData()
+        
+        if let localEditTask = realm.object(ofType: LocalTask.self, forPrimaryKey: task.id) {
+            
+            do {
+                try realm.write {
+                    localEditTask.capion = task.caption
+                    localEditTask.category = task.category
+                    localEditTask.isComplete = task.isComplete
+                }
+            } catch {
+                let errorText = error.localizedDescription
+                os_log("%@", type: .error, errorText)
+            }
+        }
     }
     
     @objc func createTask(_ notification: Notification) {
@@ -56,6 +90,22 @@ class HomeViewController: UIViewController {
         }
         tasks.append(task)
         tableView.reloadData()
+        
+        let localTask = LocalTask()
+        localTask._id = task.id
+        localTask.capion = task.caption
+        localTask.createDate = task.createDate
+        localTask.category = task.category
+        localTask.isComplete = task.isComplete
+        do {
+            try realm.write {
+                realm.add(localTask)
+            }
+        } catch {
+            let errorText = error.localizedDescription
+            os_log("%@", type: .error, errorText)
+        }
+        os_log("Task successfully created", type: .info)
     }
     
     override func viewDidLayoutSubviews() {
@@ -95,6 +145,17 @@ extension HomeViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
+            let task = tasks[indexPath.row]
+            if let taskToDelete = realm.object(ofType: LocalTask.self, forPrimaryKey: task.id) {
+                do {
+                    try realm.write {
+                        realm.delete(taskToDelete)
+                    }
+                } catch {
+                    let errorText = error.localizedDescription
+                    os_log("%@", type: .error, errorText)
+                }
+            }
             tasks.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)
         }
