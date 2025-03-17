@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class HomeViewController: UIViewController {
 
     @IBOutlet weak var titleView: UIView!
     @IBOutlet weak var tableView: UITableView!
@@ -80,7 +80,7 @@ class ViewController: UIViewController {
     
 }
 
-extension ViewController: UITableViewDataSource {
+extension HomeViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tasks.count
     }
@@ -102,7 +102,7 @@ extension ViewController: UITableViewDataSource {
     
 }
 
-extension ViewController: TaskTableViewCellDelegate {
+extension HomeViewController: TaskTableViewCellDelegate {
     func editTask(id: String) {
         guard let task = tasks.first(where: { $0.id == id }) else {
             return
