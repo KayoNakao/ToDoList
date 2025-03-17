@@ -6,8 +6,9 @@
 //
 
 import UIKit
+import RealmSwift
 
-enum Category:String, CaseIterable {
+enum Category:String, CaseIterable, PersistableEnum {
     case work = "Work", study = "Study", excercise = "Excercise"
     
     var color: UIColor {
